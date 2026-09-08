@@ -7,12 +7,13 @@
 #   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
 #                                                  +#+#+#+#+#+   +#+          #
 #   Created: 2026/08/27 14:44:15 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/08 15:20:59 by nda-roch           ###   ########.fr      #
+#   Updated: 2026/09/08 15:59:42 by nda-roch           ###   ########.fr      #
 #                                                                             #
 # ########################################################################### #
 
 from dataclasses import dataclass
 from models import Hub, Connection
+from exceptions import ParseError
 
 
 @dataclass
@@ -52,8 +53,8 @@ class Parser:
                 x = int(components[1])
                 y = int(components[2])
             except ValueError:
-                raise Exception(
-                    f"Line {self.current_line_n}: Invalid coordinate in hub '{name}'. Expected integers, got '{components[1]}' and '{components[2]}'")
+                raise ParseError(
+                    self.current_line_n, f"Invalid coordinate in hub '{name}'. Expected integers, got '{components[1]}' and '{components[2]}'")
 
             zone_type = "normal"
             color = None
@@ -66,19 +67,19 @@ class Parser:
                     key, value = pair.split("=")
                     if key == "zone":
                         if value.lower() not in zones:
-                            raise Exception(
-                                f"Line {self.current_line_n}: '{value}' is not a valid zone!")
+                            raise ParseError(
+                                self.current_line_n, f"'{value}' is not a valid zone!")
                         zone_type = value.lower()
                     elif key == "color":
                         color = value
                     elif key == "max_drones":
                         if int(value) <= 0:
-                            raise Exception(
-                                f"Line {self.current_line_n}: Invalid max_drones capacity")
+                            raise ParseError(
+                                self.current_line_n, "Invalid max_drones capacity")
                         max_drones = int(value)
         else:
-            raise Exception(
-                f"Line {self.current_line_n}: Missing components for '{name}'")
+            raise ParseError(
+                self.current_line_n, f"Missing components for '{name}'")
 
         return Hub(
             name=name,
@@ -106,18 +107,18 @@ class Parser:
             connection_id = "-".join(names)
 
             if connection_id in self._seen_connections:
-                raise Exception(
-                    f"Line {self.current_line_n}: Duplicate connection: {connection_id}")
+                raise ParseError(
+                    self.current_line_n, f"Duplicate connection: {connection_id}")
 
             self._seen_connections.add(connection_id)
 
         else:
             if components[0] not in self.hubs:
-                raise Exception(
-                    f"Line {self.current_line_n}: Unknown hub '{components[0]}' in connection '{main_part.strip()}'")
+                raise ParseError(
+                    self.current_line_n, f"Unknown hub '{components[0]}' in connection '{main_part.strip()}'")
             else:
-                raise Exception(
-                    f"Line {self.current_line_n}: Unknown hub '{components[1]}' in connection '{main_part.strip()}'")
+                raise ParseError(
+                    self.current_line_n, f"Unknown hub '{components[1]}' in connection '{main_part.strip()}'")
 
         max_link_capacity = 1
 
@@ -128,11 +129,11 @@ class Parser:
                 try:
                     max_link_capacity = int(value)
                 except ValueError:
-                    raise ValueError(
-                        f"Line {self.current_line_n}: '{value}' is not a Integer!")
+                    raise ParseError(self.current_line_n,
+                                     f"'{value}' is not a Integer!")
             else:
-                raise Exception(
-                    f"Line {self.current_line_n}: '{name}' is not valid!")
+                raise ParseError(
+                    self.current_line_n, f"'{name}' is not valid!")
 
         connection = Connection(
             hub1=hub1,
@@ -164,8 +165,8 @@ class Parser:
                 try:
                     self.n_drones = int(rest)
                 except ValueError:
-                    raise ValueError(
-                        f"Line {self.current_line_n}: '{rest}' is not a Integer!")
+                    raise ParseError(self.current_line_n,
+                                     f"'{rest}' is not a Integer!")
             elif prefix == "start_hub":
                 hub = self._parse_hub(rest)
                 self.start_hub = hub
@@ -183,17 +184,18 @@ class Parser:
                 connection = self._parse_connection(rest)
                 self.connections.append(connection)
             else:
-                raise Exception(
-                    f"Unknown line type at line {self.current_line_n}: {prefix}")
+                raise ParseError(self.current_line_n,
+                                 f"Unknown line type at line: {prefix}")
 
         if self.n_drones <= 0:
-            raise Exception(f"Number of drones is {self.n_drones}")
+            raise ParseError(self.current_line_n,
+                             f"Number of drones is {self.n_drones}")
 
         if self.start_hub is None:
-            raise Exception("No start hub found!")
+            raise ParseError(self.current_line_n, "No start hub found!")
 
         if self.end_hub is None:
-            raise Exception("No end hub found!")
+            raise ParseError(self.current_line_n, "No end hub found!")
 
         return ParsedMap(
             hubs=self.hubs,
