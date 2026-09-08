@@ -7,7 +7,7 @@
 #   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
 #                                                  +#+#+#+#+#+   +#+          #
 #   Created: 2026/08/27 14:44:15 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/08 15:59:42 by nda-roch           ###   ########.fr      #
+#   Updated: 2026/09/08 16:41:13 by nda-roch           ###   ########.fr      #
 #                                                                             #
 # ########################################################################### #
 
@@ -54,7 +54,9 @@ class Parser:
                 y = int(components[2])
             except ValueError:
                 raise ParseError(
-                    self.current_line_n, f"Invalid coordinate in hub '{name}'. Expected integers, got '{components[1]}' and '{components[2]}'")
+                    self.current_line_n,
+                    f"Invalid coordinate in hub '{name}'. Expected integers, "
+                    f"got '{components[1]}' and '{components[2]}'")
 
             zone_type = "normal"
             color = None
@@ -68,14 +70,16 @@ class Parser:
                     if key == "zone":
                         if value.lower() not in zones:
                             raise ParseError(
-                                self.current_line_n, f"'{value}' is not a valid zone!")
+                                self.current_line_n,
+                                f"'{value}' is not a valid zone!")
                         zone_type = value.lower()
                     elif key == "color":
                         color = value
                     elif key == "max_drones":
                         if int(value) <= 0:
                             raise ParseError(
-                                self.current_line_n, "Invalid max_drones capacity")
+                                self.current_line_n,
+                                "Invalid max_drones capacity")
                         max_drones = int(value)
         else:
             raise ParseError(
@@ -108,17 +112,22 @@ class Parser:
 
             if connection_id in self._seen_connections:
                 raise ParseError(
-                    self.current_line_n, f"Duplicate connection: {connection_id}")
+                    self.current_line_n,
+                    f"Duplicate connection: {connection_id}")
 
             self._seen_connections.add(connection_id)
 
         else:
             if components[0] not in self.hubs:
                 raise ParseError(
-                    self.current_line_n, f"Unknown hub '{components[0]}' in connection '{main_part.strip()}'")
+                    self.current_line_n,
+                    f"Unknown hub '{components[0]}' in connection "
+                    f"'{main_part.strip()}'")
             else:
                 raise ParseError(
-                    self.current_line_n, f"Unknown hub '{components[1]}' in connection '{main_part.strip()}'")
+                    self.current_line_n,
+                    f"Unknown hub '{components[1]}' in connection "
+                    f"'{main_part.strip()}'")
 
         max_link_capacity = 1
 
