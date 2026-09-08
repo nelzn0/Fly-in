@@ -7,11 +7,12 @@
 #   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
 #                                                  +#+#+#+#+#+   +#+          #
 #   Created: 2026/08/27 14:44:15 by nda-roch            #+#    #+#            #
-#   Updated: 2026/08/27 19:13:23 by nda-roch           ###   ########.fr      #
+#   Updated: 2026/09/08 15:20:59 by nda-roch           ###   ########.fr      #
 #                                                                             #
 # ########################################################################### #
 
 from dataclasses import dataclass
+from models import Hub, Connection
 
 
 @dataclass
@@ -54,33 +55,38 @@ class Parser:
                 raise Exception(
                     f"Line {self.current_line_n}: Invalid coordinate in hub '{name}'. Expected integers, got '{components[1]}' and '{components[2]}'")
 
-            metadata = {}
+            zone_type = "normal"
+            color = None
+            max_drones = 1
+
             if metadata_part:
                 metadata_str = metadata_part.rstrip("]")
 
                 for pair in metadata_str.split(" "):
                     key, value = pair.split("=")
-                    if key == "max_drones":
-                        if int(value) <= 0:
-                            raise Exception(
-                                f"Line {self.current_line_n}: Invalid max_drones capacity")
-                        metadata[key] = int(value)
-                    else:
-                        metadata[key] = value
-
                     if key == "zone":
                         if value.lower() not in zones:
                             raise Exception(
                                 f"Line {self.current_line_n}: '{value}' is not a valid zone!")
-            else:
-                raise Exception(
-                    f"Line {self.current_line_n}: Missing components for '{name}'")
+                        zone_type = value.lower()
+                    elif key == "color":
+                        color = value
+                    elif key == "max_drones":
+                        if int(value) <= 0:
+                            raise Exception(
+                                f"Line {self.current_line_n}: Invalid max_drones capacity")
+                        max_drones = int(value)
+        else:
+            raise Exception(
+                f"Line {self.current_line_n}: Missing components for '{name}'")
 
         return Hub(
             name=name,
             x=x,
             y=y,
-            metadata=metadata
+            zone_type=zone_type,
+            max_drones=max_drones,
+            color=color
         )
 
     def _parse_connection(self, rest: str) -> Connection:
@@ -113,13 +119,14 @@ class Parser:
                 raise Exception(
                     f"Line {self.current_line_n}: Unknown hub '{components[1]}' in connection '{main_part.strip()}'")
 
-        metadata = {}
+        max_link_capacity = 1
+
         if metadata_part:
             metadata_str = metadata_part.rstrip("]")
             name, value = metadata_str.split("=")
             if name == "max_link_capacity":
                 try:
-                    metadata[name] = int(value)
+                    max_link_capacity = int(value)
                 except ValueError:
                     raise ValueError(
                         f"Line {self.current_line_n}: '{value}' is not a Integer!")
@@ -127,11 +134,17 @@ class Parser:
                 raise Exception(
                     f"Line {self.current_line_n}: '{name}' is not valid!")
 
-        return Connection(
+        connection = Connection(
             hub1=hub1,
             hub2=hub2,
-            metadata=metadata
+            max_link_capacity=max_link_capacity,
+            current_occupants=0
         )
+
+        hub1.connections.append(connection)
+        hub2.connections.append(connection)
+
+        return connection
 
     def parse(self, filepath: str) -> ParsedMap:
         with open(filepath, "r") as f:
@@ -157,10 +170,12 @@ class Parser:
                 hub = self._parse_hub(rest)
                 self.start_hub = hub
                 self.hubs[hub.name] = hub
+                hub.is_start = True
             elif prefix == "end_hub":
                 hub = self._parse_hub(rest)
                 self.end_hub = hub
                 self.hubs[hub.name] = hub
+                hub.is_end = True
             elif prefix == "hub":
                 hub = self._parse_hub(rest)
                 self.hubs[hub.name] = hub

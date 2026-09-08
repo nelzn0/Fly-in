@@ -2,15 +2,16 @@
 # ########################################################################### #
 #   shebang: 1                                                                #
 #                                                          :::      ::::::::  #
-#   hub.py                                               :+:      :+:    :+:  #
+#   models.py                                            :+:      :+:    :+:  #
 #                                                      +:+ +:+         +:+    #
 #   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
 #                                                  +#+#+#+#+#+   +#+          #
-#   Created: 2026/08/28 11:52:39 by nda-roch            #+#    #+#            #
-#   Updated: 2026/08/28 12:15:22 by nda-roch           ###   ########.fr      #
+#   Created: 2026/09/08 13:52:35 by nda-roch            #+#    #+#            #
+#   Updated: 2026/09/08 14:49:37 by nda-roch           ###   ########.fr      #
 #                                                                             #
 # ########################################################################### #
 
+from __future__ import annotations
 from dataclasses import dataclass, field
 
 
@@ -26,3 +27,11 @@ class Hub:
     connections: list[Connection] = field(default_factory=list)
     is_start: bool = False
     is_end: bool = False
+
+
+@dataclass
+class Connection:
+    hub1: Hub
+    hub2: Hub
+    max_link_capacity: int = 1
+    current_occupants: int = 0
