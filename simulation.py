@@ -7,7 +7,7 @@
 #   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
 #                                                  +#+#+#+#+#+   +#+          #
 #   Created: 2026/09/10 14:56:44 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/10 16:37:55 by nda-roch           ###   ########.fr      #
+#   Updated: 2026/09/10 19:00:42 by nda-roch           ###   ########.fr      #
 #                                                                             #
 # ########################################################################### #
 
@@ -42,9 +42,24 @@ class Simulation:
             for drone in self.drones:
                 if drone.plan_index + 1 < len(drone.plan):
                     next_hub = drone.plan[drone.plan_index + 1]
-                    drone.position = next_hub
-                    drone.plan_index += 1
-                if drone.position == self.end:
-                    drone.is_delivered = True
-                moves.append(f"D{drone.id}-{drone.position.name}")
+                    if next_hub.zone_type == "restricted":
+                        conn = next(
+                            c for c in drone.position.connections if next_hub in (c.hub1, c.hub2))
+                        drone.remaining_turns = 2
+                        drone.destination = next_hub
+                        drone.position = conn
+                        drone.plan_index += 1
+                        moves.append(
+                            f"D{drone.id}-{conn.hub1.name}-{conn.hub2.name}")
+                    else:
+                        occupants = sum(
+                            1 for drone in self.drones if drone.position == next_hub)
+                        if occupants + 1 <= next_hub.max_drones or next_hub.is_end:
+                            drone.position = next_hub
+                            drone.plan_index += 1
+                            if drone.position == self.end:
+                                drone.is_delivered = True
+                            moves.append(f"D{drone.id}-{drone.position.name}")
+                else:
+                    continue
             print(" ".join(moves))
