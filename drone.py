@@ -7,11 +7,11 @@
 #   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
 #                                                  +#+#+#+#+#+   +#+          #
 #   Created: 2026/09/08 15:23:33 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/08 15:34:07 by nda-roch           ###   ########.fr      #
+#   Updated: 2026/09/10 16:09:23 by nda-roch           ###   ########.fr      #
 #                                                                             #
 # ########################################################################### #
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from models import Hub, Connection
 
 
@@ -19,6 +19,8 @@ from models import Hub, Connection
 class Drone:
     id: int
     position: Hub | Connection
-    destination: Hub | None
+    destination: Hub | None = None
     remaining_turns: int = 0
     is_delivered: bool = False
+    plan: list[Hub] = field(default_factory=list)
+    plan_index: int = 0

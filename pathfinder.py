@@ -7,14 +7,14 @@
 #   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
 #                                                  +#+#+#+#+#+   +#+          #
 #   Created: 2026/09/08 17:14:26 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/08 19:16:00 by nda-roch           ###   ########.fr      #
+#   Updated: 2026/09/10 15:45:46 by nda-roch           ###   ########.fr      #
 #                                                                             #
 # ########################################################################### #
 
 from models import Hub
 
 
-def find_path(start: Hub, end: Hub, hubs: dict[str, Hub]) -> list[Hub]:
+def find_path(start: Hub, end: Hub, hubs: dict[str, Hub], load: dict[str, float]) -> list[Hub]:
 
     costs = {hub.name: float('inf') for hub in hubs.values()}
     costs[start.name] = 0
@@ -50,7 +50,8 @@ def find_path(start: Hub, end: Hub, hubs: dict[str, Hub]) -> list[Hub]:
             else:
                 move_cost = 1
 
-            new_cost = costs[current] + move_cost
+            new_cost = costs[current] + move_cost + \
+                load.get(neighbor.name, 0.0)
 
             if new_cost < costs[neighbor.name]:
                 costs[neighbor.name] = new_cost
