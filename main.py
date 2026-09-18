@@ -7,7 +7,7 @@
 #   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
 #                                                  +#+#+#+#+#+   +#+          #
 #   Created: 2026/08/27 14:38:52 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/10 18:33:28 by nda-roch           ###   ########.fr      #
+#   Updated: 2026/09/18 17:31:04 by nda-roch           ###   ########.fr      #
 #                                                                             #
 # ########################################################################### #
 
@@ -22,7 +22,9 @@ def main() -> None:
         parsed_map = Parser().parse(argv[1])
         sim = Simulation(parsed_map)
         sim.drone_paths()
-        sim.run()
+        history = sim.run()
+        for line in history:
+            print(line)
 
     except FlyInError as e:
         print(f"Error: {e}")

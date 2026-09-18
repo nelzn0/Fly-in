@@ -7,7 +7,7 @@
 #   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
 #                                                  +#+#+#+#+#+   +#+          #
 #   Created: 2026/09/08 17:14:26 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/10 15:45:46 by nda-roch           ###   ########.fr      #
+#   Updated: 2026/09/18 15:42:39 by nda-roch           ###   ########.fr      #
 #                                                                             #
 # ########################################################################### #
 
@@ -47,6 +47,8 @@ def find_path(start: Hub, end: Hub, hubs: dict[str, Hub], load: dict[str, float]
 
             if neighbor.zone_type == "restricted":
                 move_cost = 2
+            elif neighbor.zone_type == "priority":
+                move_cost = 0.5
             else:
                 move_cost = 1
 

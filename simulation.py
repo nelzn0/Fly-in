@@ -7,7 +7,7 @@
 #   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
 #                                                  +#+#+#+#+#+   +#+          #
 #   Created: 2026/09/10 14:56:44 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/16 17:16:14 by nda-roch           ###   ########.fr      #
+#   Updated: 2026/09/18 17:32:27 by nda-roch           ###   ########.fr      #
 #                                                                             #
 # ########################################################################### #
 
@@ -36,7 +36,8 @@ class Simulation:
             for hub in path:
                 self.load[hub.name] += 0.5
 
-    def run(self) -> None:
+    def run(self) -> list[str]:
+        trace: list[str] = []
         while not all(drone.is_delivered for drone in self.drones):
             moves = []
             link_usage = {}
@@ -62,7 +63,10 @@ class Simulation:
                             1 for drone in self.drones if drone.position == next_hub)
                         on_link = sum(
                             1 for drone in self.drones if drone.position is conn)
-                        if on_link + link_usage.get(key, 0) + 1 <= conn.max_link_capacity and occupants + 1 <= next_hub.max_drones:
+                        reserved = sum(
+                            1 for drone in self.drones if drone.destination == next_hub)
+                        if (on_link + link_usage.get(key, 0) + 1 <= conn.max_link_capacity
+                                and occupants + reserved + 1 <= next_hub.max_drones):
                             drone.remaining_turns = 2
                             drone.destination = next_hub
                             drone.position = conn
@@ -86,4 +90,5 @@ class Simulation:
                             moves.append(f"D{drone.id}-{drone.position.name}")
                 else:
                     continue
-            print(" ".join(moves))
+            trace.append(" ".join(moves))
+        return trace
