@@ -7,13 +7,13 @@
 #   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
 #                                                  +#+#+#+#+#+   +#+          #
 #   Created: 2026/09/10 14:56:44 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/10 19:00:42 by nda-roch           ###   ########.fr      #
+#   Updated: 2026/09/16 17:16:14 by nda-roch           ###   ########.fr      #
 #                                                                             #
 # ########################################################################### #
 
 from parser import ParsedMap
 from drone import Drone
-from models import Hub
+from models import Hub, Connection
 from pathfinder import find_path
 
 
@@ -39,24 +39,48 @@ class Simulation:
     def run(self) -> None:
         while not all(drone.is_delivered for drone in self.drones):
             moves = []
+            link_usage = {}
             for drone in self.drones:
-                if drone.plan_index + 1 < len(drone.plan):
-                    next_hub = drone.plan[drone.plan_index + 1]
-                    if next_hub.zone_type == "restricted":
-                        conn = next(
-                            c for c in drone.position.connections if next_hub in (c.hub1, c.hub2))
-                        drone.remaining_turns = 2
-                        drone.destination = next_hub
-                        drone.position = conn
-                        drone.plan_index += 1
+                if isinstance(drone.position, Connection):
+                    conn = drone.position
+                    drone.remaining_turns -= 1
+                    if drone.remaining_turns == 0:
+                        drone.position = drone.destination
+                        drone.destination = None
+                        moves.append(f"D{drone.id}-{drone.position.name}")
+                    else:
                         moves.append(
                             f"D{drone.id}-{conn.hub1.name}-{conn.hub2.name}")
+                    continue
+                if drone.plan_index + 1 < len(drone.plan):
+                    next_hub = drone.plan[drone.plan_index + 1]
+                    conn = next(
+                        c for c in drone.position.connections if next_hub in (c.hub1, c.hub2))
+                    key = "-".join(sorted([conn.hub1.name, conn.hub2.name]))
+                    if next_hub.zone_type == "restricted":
+                        occupants = sum(
+                            1 for drone in self.drones if drone.position == next_hub)
+                        on_link = sum(
+                            1 for drone in self.drones if drone.position is conn)
+                        if on_link + link_usage.get(key, 0) + 1 <= conn.max_link_capacity and occupants + 1 <= next_hub.max_drones:
+                            drone.remaining_turns = 2
+                            drone.destination = next_hub
+                            drone.position = conn
+                            drone.plan_index += 1
+                            link_usage[key] = link_usage.get(key, 0) + 1
+                            moves.append(
+                                f"D{drone.id}-{conn.hub1.name}-{conn.hub2.name}")
+                        else:
+                            continue
                     else:
                         occupants = sum(
                             1 for drone in self.drones if drone.position == next_hub)
-                        if occupants + 1 <= next_hub.max_drones or next_hub.is_end:
+                        on_link = sum(
+                            1 for drone in self.drones if drone.position is conn)
+                        if on_link + link_usage.get(key, 0) + 1 <= conn.max_link_capacity and (occupants + 1 <= next_hub.max_drones or next_hub.is_end):
                             drone.position = next_hub
                             drone.plan_index += 1
+                            link_usage[key] = link_usage.get(key, 0) + 1
                             if drone.position == self.end:
                                 drone.is_delivered = True
                             moves.append(f"D{drone.id}-{drone.position.name}")

@@ -7,7 +7,7 @@
 #   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
 #                                                  +#+#+#+#+#+   +#+          #
 #   Created: 2026/08/27 14:44:15 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/08 16:41:13 by nda-roch           ###   ########.fr      #
+#   Updated: 2026/09/16 16:58:51 by nda-roch           ###   ########.fr      #
 #                                                                             #
 # ########################################################################### #
 
@@ -148,7 +148,6 @@ class Parser:
             hub1=hub1,
             hub2=hub2,
             max_link_capacity=max_link_capacity,
-            current_occupants=0
         )
 
         hub1.connections.append(connection)
