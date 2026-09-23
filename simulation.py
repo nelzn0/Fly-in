@@ -7,7 +7,7 @@
 #   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
 #                                                  +#+#+#+#+#+   +#+          #
 #   Created: 2026/09/10 14:56:44 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/18 17:32:27 by nda-roch           ###   ########.fr      #
+#   Updated: 2026/09/23 19:43:49 by nda-roch           ###   ########.fr      #
 #                                                                             #
 # ########################################################################### #
 
@@ -45,7 +45,7 @@ class Simulation:
                 if isinstance(drone.position, Connection):
                     conn = drone.position
                     drone.remaining_turns -= 1
-                    if drone.remaining_turns == 0:
+                    if drone.remaining_turns > 0:
                         drone.position = drone.destination
                         drone.destination = None
                         moves.append(f"D{drone.id}-{drone.position.name}")
@@ -66,7 +66,7 @@ class Simulation:
                         reserved = sum(
                             1 for drone in self.drones if drone.destination == next_hub)
                         if (on_link + link_usage.get(key, 0) + 1 <= conn.max_link_capacity
-                                and occupants + reserved + 1 <= next_hub.max_drones):
+                                and occupants + reserved + 1 <= next_hub.max_drones or next_hub.is_end):
                             drone.remaining_turns = 2
                             drone.destination = next_hub
                             drone.position = conn

@@ -7,7 +7,7 @@
 #   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
 #                                                  +#+#+#+#+#+   +#+          #
 #   Created: 2026/08/27 14:38:52 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/18 18:23:28 by nda-roch           ###   ########.fr      #
+#   Updated: 2026/09/23 19:32:57 by nda-roch           ###   ########.fr      #
 #                                                                             #
 # ########################################################################### #
 
@@ -33,8 +33,13 @@ def main() -> None:
     if choice == "2":
         run_renderer(parsed_map, trace)
     else:
+        n = 1
         for line in trace:
-            print(line)
+            print(f"Turn {n}:")
+            print()
+            print(line.replace(' ', '\n'))
+            print()
+            n += 1
 
 
 if __name__ == "__main__":
