@@ -7,7 +7,7 @@
 #   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
 #                                                  +#+#+#+#+#+   +#+          #
 #   Created: 2026/09/18 17:32:51 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/24 18:46:59 by nda-roch           ###   ########.fr      #
+#   Updated: 2026/09/24 19:28:54 by nda-roch           ###   ########.fr      #
 #                                                                             #
 # ########################################################################### #
 
@@ -24,6 +24,16 @@ DRONE_FRACTION = 12
 DRONE_FLOOR = 4
 CONNECTION_FRACTION = 50
 LOD_MINIMAL = 100
+
+COLORS = {
+    "BACKGROUND": "#0a0a12",
+    "TEXT_BRIGHT": "white",
+    "TEXT_DIM": "gray55",
+    "TEXT_ACTIVE": "orange3",
+    "LINES": "forestgreen",
+    "HUD_BG": "gray20",
+    "HUD_TEXT": "orange3",
+}
 
 
 class Renderer:
@@ -44,8 +54,7 @@ class Renderer:
         ys = [hub.y for hub in parsed.hubs.values()]
         self.parsed = parsed
         self.trace = trace
-        self.connections = {self.connection_key(connection.hub1.name, connection.hub2.name)
-                                                : connection for connection in self.parsed.connections}
+        self.connections = {self.connection_key(connection.hub1.name, connection.hub2.name): connection for connection in self.parsed.connections}
         self.max_x = max(xs)
         self.max_y = max(ys)
         self.min_x = min(xs)
@@ -57,8 +66,8 @@ class Renderer:
         scene_width = self.max_x - self.min_x
         scene_height = self.max_y - self.min_y
         world_height = self.screen.get_height() - self.HUD_HEIGHT
-        cell_w = SCENE_FIT * self.screen.get_width() // scene_width  # 70% of the screen width
-        cell_h = SCENE_FIT * world_height // scene_height  # 70% of the screen height
+        cell_w = SCENE_FIT * self.screen.get_width() // scene_width
+        cell_h = SCENE_FIT * world_height // scene_height
         self.CELL_SIZE = int(min(cell_w, cell_h))
         self.lod = ("full" if self.CELL_SIZE >= LOD_MINIMAL else "minimal")
         font_size = int(max(self.CELL_SIZE // FONT_FRACTION, FONT_FLOOR))
@@ -106,14 +115,9 @@ class Renderer:
 
         return "-".join(sorted([name1, name2]))
 
-    def draw_frame(self, turn_index: int):
-        """
-            draw the hubs, the connections, and the drones
+    def draw_hud(self, turn_index: int) -> None:
 
-        """
-        self.screen.fill("black")
-
-        pygame.draw.rect(self.screen, "gray20", (0, 0, self.screen.get_width(), self.HUD_HEIGHT))
+        pygame.draw.rect(self.screen, COLORS["HUD_BG"], (0, 0, self.screen.get_width(), self.HUD_HEIGHT))
 
         text_surface = self.hud_font.render(f"Turn {turn_index}", True, "white")
 
@@ -121,6 +125,7 @@ class Renderer:
 
         self.screen.blit(text_surface, (20, text_y))
 
+    def build_occupants(self, turn_index: int) -> dict[str, list[str]]:
         occupants = {}
         for move in self.trace[turn_index].split():
             drone_id, location = move.split("-", 1)
@@ -131,6 +136,10 @@ class Renderer:
                 key = self.connection_key(h1, h2)
             occupants.setdefault(key, []).append(drone_id)
 
+        return occupants
+
+    def draw_hubs(self, occupants: dict[str, list[str]]):
+
         for hub in self.parsed.hubs.values():
             px, py = self.hub_to_pixel(hub)
 
@@ -138,13 +147,13 @@ class Renderer:
 
             if self.lod == "full":
 
-                name_surface = self.font.render(hub.name, True, "white")
+                name_surface = self.font.render(hub.name, True, COLORS["TEXT_BRIGHT"])
 
                 name_x = px - name_surface.get_width() // 2
                 name_y = py + self.hub_radius + self.gap
 
                 self.screen.blit(name_surface, (name_x, name_y))
-                type_surface = self.font.render(hub.zone_type, True, "white")
+                type_surface = self.font.render(hub.zone_type, True, COLORS["TEXT_DIM"])
 
                 type_x = px - type_surface.get_width() // 2
                 type_y = name_y + self.line_height
@@ -157,17 +166,17 @@ class Renderer:
                         occ_text = f"{' '.join(drones)} ({len(drones)}/{hub.max_drones})"
                     else:
                         occ_text = ' '.join(drones)
-                    occ_surface = self.font.render(occ_text, True, "white")
+                    occ_surface = self.font.render(occ_text, True, COLORS["TEXT_ACTIVE"])
                     occ_x = px - occ_surface.get_width() // 2
                     occ_y = type_y + self.line_height
                     self.screen.blit(occ_surface, (occ_x, occ_y))
-            else:
-                continue
+
+    def draw_connections(self, occupants: dict[str, list[str]]):
 
         for connection in self.parsed.connections:
             ax, ay = self.hub_to_pixel(connection.hub1)
             bx, by = self.hub_to_pixel(connection.hub2)
-            pygame.draw.line(self.screen, "blue", (ax, ay), (bx, by), self.connection_radius)
+            pygame.draw.line(self.screen, COLORS["LINES"], (ax, ay), (bx, by), self.connection_radius)
 
             if self.lod == "full":
 
@@ -183,28 +192,34 @@ class Renderer:
                     occ_c_y = py + self.connection_radius + self.gap
 
                     self.screen.blit(occ_c_surface, (occ_c_x, occ_c_y))
+
+    def draw_drones(self, occupants: dict[str, list[str]]):
+        for key, drones in occupants.items():
+            if key in self.parsed.hubs:
+                px, py = self.hub_to_pixel(self.parsed.hubs[key])
             else:
-                continue
+                px, py = self.connection_to_pixel(self.connections[key])
+            for drone_id in drones:
+                color = self.palette[int(drone_id[1:]) % len(self.palette)]
+                pygame.draw.circle(self.screen, color, (px, py), self.drone_radius)
 
-        for move in self.trace[turn_index].split():
-            drone_id, location = move.split("-", 1)
-            if location in self.parsed.hubs:
-                px, py = self.hub_to_pixel(self.parsed.hubs[location])
-            else:
-                loc_h1, loc_h2 = location.split("-", 1)
-                loc_key = self.connection_key(loc_h1, loc_h2)
-                conn = self.connections[loc_key]
-                px, py = self.connection_to_pixel(conn)
-            color = self.palette[int(drone_id[1:]) % len(self.palette)]
+    def draw_frame(self, turn_index: int):
+        """
+            draw the hubs, the connections, and the drones
 
-            pygame.draw.circle(self.screen, color, (px, py), self.drone_radius)
+        """
 
-            drone_surface = self.font.render(drone_id, True, "white")
+        self.screen.fill(COLORS["BACKGROUND"])
 
-            drone_x = px - drone_surface.get_width() // 2
-            drone_y = py - self.drone_radius - self.gap * 4
+        self.draw_hud(turn_index)
 
-            self.screen.blit(drone_surface, (drone_x, drone_y))
+        occupants = self.build_occupants(turn_index)
+
+        self.draw_hubs(occupants)
+
+        self.draw_connections(occupants)
+
+        self.draw_drones(occupants)
 
         pygame.display.flip()
 
@@ -221,8 +236,6 @@ def run_renderer(parsed: ParsedMap, trace: list[str]) -> None:
     BEAT_MS = 700
     render = Renderer(parsed, trace)
     turn_index = 0
-
-    print(render.CELL_SIZE)
 
     while running:
         for event in pygame.event.get():
