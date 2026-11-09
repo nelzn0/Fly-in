@@ -290,8 +290,11 @@ class Parser:
                 start zone or no end zone.
             FileNotFoundError: If the file does not exist.
         """
-        with open(filepath, "r") as f:
-            data = f.read()
+        try:
+            with open(filepath, "r") as f:
+                data = f.read()
+        except UnicodeDecodeError:
+            raise ParseError(None, f"'{filepath}' is not a valid text file")
 
         # go through the file one line at a time, starting at line 1
         for line_n, raw_line in enumerate(data.splitlines(), start=1):

@@ -106,6 +106,11 @@ class Pathfinder:
             # take the cheapest zone we know about
             current: str = min(frontier, key=lambda name: costs[name])
             frontier.remove(current)
+
+            # already settled through a early copy, skip scan
+            if current in settled:
+                continue
+
             settled.add(current)
 
             # the end is settled, so we already have the cheapest path to it
