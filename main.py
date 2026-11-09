@@ -15,7 +15,6 @@ from parser import Parser
 from exceptions import FlyInError
 from sys import argv, exit
 from simulation import Simulation
-from renderer import run_renderer
 
 
 def main() -> None:
@@ -28,20 +27,20 @@ def main() -> None:
         sim.drone_paths()
         trace = sim.run()
 
-    except FlyInError as e:
+    except (FlyInError, FileNotFoundError) as e:
         print(f"Error: {e}")
         exit(1)
 
-    except FileNotFoundError as e:
-        print(f"Error: {e}")
-        exit(1)
+    choice = input("1 - Terminal / 2 - Graphical Interface\n")
 
-    choice = input("1 - Terminal / 2 - Graphical Interface")
     if choice == "2":
-        run_renderer(parsed_map, trace)
+        from renderer import Renderer
+        renderer = Renderer(parsed_map, trace)
+        renderer.run()
     else:
-        for line in trace:
-            print(line)
+        from terminaloutput import TerminalOutput
+        toutput = TerminalOutput(trace)
+        toutput.show()
 
 
 if __name__ == "__main__":

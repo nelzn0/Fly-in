@@ -21,7 +21,7 @@ class Hub:
     x: int
     y: int
     zone_type: str              # "normal", "restricted", "priority", "blocked"
-    max_drones: int = 1         # default 1, max 2, start/end unlimited
+    max_drones: int = 1         # default 1, start/end unlimited
     color: str | None = None
     connections: list[Connection] = field(default_factory=list)
     is_start: bool = False

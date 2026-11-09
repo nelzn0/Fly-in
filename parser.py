@@ -25,7 +25,7 @@ class ParsedMap:
     connections: list[Connection]
 
 
-zones = {"normal", "blocked", "restricted", "priority"}
+ZONE_TYPES = {"normal", "blocked", "restricted", "priority"}
 
 
 class Parser:
@@ -71,7 +71,7 @@ class Parser:
                                          f"Invalid metadata: '{pair}', expected key=value, example: [max_drones=2]")
                     key, value = pair.split("=", 1)
                     if key == "zone":
-                        if value.lower() not in zones:
+                        if value.lower() not in ZONE_TYPES:
                             raise ParseError(
                                 self.current_line_n,
                                 f"'{value}' is not a valid zone!")
@@ -229,7 +229,7 @@ class Parser:
                                  f"Unknown line type at line: {prefix}")
 
         if self.n_drones <= 0:
-            raise ParseError(self.current_line_n,
+            raise ParseError(None,
                              f"Number of drones is {self.n_drones}")
 
         if self.start_hub is None:

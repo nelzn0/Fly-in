@@ -14,6 +14,10 @@
 from models import Hub
 from exceptions import SimulationError
 
+RESTRICTED_COST = 2
+PRIORITY_COST = 0.5
+NORMAL_COST = 1
+
 
 class Pathfinder:
     def __init__(self, hubs: dict[str, Hub], start: Hub, end: Hub) -> None:
@@ -23,11 +27,11 @@ class Pathfinder:
 
     def _move_cost(self, hub: Hub) -> float:
         if hub.zone_type == "restricted":
-            return 2
+            return RESTRICTED_COST
         elif hub.zone_type == "priority":
-            return 0.5
+            return PRIORITY_COST
         else:
-            return 1
+            return NORMAL_COST
 
     def _neighbors(self, hub: Hub) -> list[Hub]:
         neighbors = []

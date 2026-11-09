@@ -24,6 +24,7 @@ DRONE_FRACTION = 12
 DRONE_FLOOR = 4
 CONNECTION_FRACTION = 50
 LOD_MINIMAL = 100
+BEAT_MS = 700
 
 COLORS = {
     "BACKGROUND": "#0a0a12",
@@ -51,6 +52,8 @@ class Renderer:
             trace -- _description_
         """
 
+        pygame.init()
+
         self.parsed = parsed
         self.trace = trace
         self.connections = self._index_connections()
@@ -65,7 +68,8 @@ class Renderer:
         self._set_margins()
 
     def _index_connections(self) -> dict[str, Connection]:
-        connections = {self.connection_key(connection.hub1.name, connection.hub2.name): connection for connection in self.parsed.connections}
+        connections = {self.connection_key(connection.hub1.name, connection.hub2.name)
+                                           : connection for connection in self.parsed.connections}
         return connections
 
     def _set_bounds(self) -> None:
@@ -244,36 +248,32 @@ class Renderer:
 
         pygame.display.flip()
 
+    def run(self) -> None:
+        """
+        Constructs the renderer, and loops the frame drawing, paces the clock and advances the turns
 
-def run_renderer(parsed: ParsedMap, trace: list[str]) -> None:
-    """
-    Constructs the renderer, and loops the frame drawing, paces the clock and advances the turns
+        """
+        running = True
 
-    """
-    pygame.init()
-    running = True
+        last_advance = pygame.time.get_ticks()
+        turn_index = 0
 
-    last_advance = pygame.time.get_ticks()
-    BEAT_MS = 700
-    render = Renderer(parsed, trace)
-    turn_index = 0
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
 
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+                # if event.type == pygame.KEYDOWN:
+                #     if event.key == pygame.K_SPACE:
+                #         turn_index += 1
 
-            # if event.type == pygame.KEYDOWN:
-            #     if event.key == pygame.K_SPACE:
-            #         turn_index += 1
+            self.draw_frame(turn_index)
+            self.clock.tick(30)
 
-        render.draw_frame(turn_index)
-        render.clock.tick(30)
+            if turn_index < len(self.trace) - 1:
+                time_now = pygame.time.get_ticks()
+                if time_now - last_advance >= BEAT_MS:
+                    turn_index += 1
+                    last_advance = time_now
 
-        if turn_index < len(trace) - 1:
-            time_now = pygame.time.get_ticks()
-            if time_now - last_advance >= BEAT_MS:
-                turn_index += 1
-                last_advance = time_now
-
-    pygame.quit()
+        pygame.quit()
