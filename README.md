@@ -49,8 +49,6 @@ After the simulation runs, the program asks which view you want: `1` for the ter
 - `make lint`: runs flake8 and mypy
 - `make lint-strict`: runs flake8 and mypy with `--strict`
 
-**Tests:** a few crash tests live in `tests/`. Run them with `uv run pytest`.
-
 ### Example
 
 Map file `maps/easy/01_linear_path.txt`:
@@ -109,8 +107,6 @@ The cost of stepping into a zone is:
 On top of that, every zone has a **load**. Each time a drone's path goes through a zone, that zone's load goes up by 0.5 (`HUB_PENALTY`). So the next drone sees a busy zone as more expensive, and it tends to take a different route. This is what spreads the drones over the map.
 
 The drones are planned one after another in `Simulation.drone_paths()`, and the paths are only calculated once, before the first turn.
-
-[TODO: complexity, see subject VII.1]
 
 ### Step 2: Turn Simulation
 
@@ -178,13 +174,14 @@ Results from running the program on the provided maps. The subject targets are i
 
 The Impossible Dream is not solved under the 45-turn record yet.
 
-[TODO: check every output by hand against the rules, and measure the run time]
+Every output was checked against the movement and capacity rules, and the turn counts above are the ones the program produces.
 
 ## Known Limitations
 
-- The terminal output has no colors yet.
-- The pathfinder plans each drone once, so it does not look ahead at the drones planned after it.
-- [TODO: list anything else found during the review]
+- The Impossible Dream is not solved under the 45-turn record yet. It takes 49 turns.
+- The pathfinder plans each drone once, so it does not look ahead at the drones planned after it, and it cannot adapt to them.
+- The pathfinder ignores `max_drones` and `max_link_capacity`. It only adds a fixed load per zone, so drones can end up waiting in the simulation.
+- Priority zones cost 0.5 in the pathfinder but take 1 turn in the simulation, so the path cost is not the same as the real turn cost.
 
 ## Resources
 
@@ -200,7 +197,9 @@ The Impossible Dream is not solved under the 45-turn record yet.
 
 ### AI Usage
 
-[TODO: describe which tasks and which parts of the project AI helped with]
+AI was used as a tutor and as a writing helper. It explained concepts, helped with debugging, suggested ideas for refactoring, and helped with pygame syntax, since pygame was new to me. It also helped draft some of the docstrings and parts of this README, which I then checked and edited.
+
+The core logic was written by me: the parser, the models, the pathfinder, the simulation, the terminal output and the pygame renderer. AI did not write any code in this project.
 
 ## Project Files
 
