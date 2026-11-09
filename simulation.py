@@ -14,7 +14,8 @@
 from parser import ParsedMap
 from drone import Drone
 from models import Hub, Connection
-from pathfinder import find_path
+from pathfinder import Pathfinder
+from exceptions import SimulationError
 
 
 class Simulation:
@@ -27,14 +28,33 @@ class Simulation:
         self.connections = parsed_map.connections
         self.load: dict[str, float] = {
             hub.name: 0.0 for hub in parsed_map.hubs.values()}
+        self.pathfinder = Pathfinder(self.hubs, self.start, self.end)
 
     def drone_paths(self) -> None:
         for drone in self.drones:
-            path = find_path(
-                self.start, self.end, self.hubs, self.load)
+            path = self.pathfinder.find_path(self.load)
             drone.plan = path
             for hub in path:
                 self.load[hub.name] += 0.5
+
+    def _can_enter_zone(self, next_hub: Hub) -> bool:
+        occupants = sum(
+            1 for d in self.drones if d.position == next_hub)
+        reserved = sum(
+            1 for d in self.drones if d.destination == next_hub)
+        if (occupants + reserved + 1 <= next_hub.max_drones or next_hub.is_end or next_hub.is_start):
+            return True
+        else:
+            return False
+
+    def _can_use_link(self, conn: Connection, link_usage: dict[str, int]) -> bool:
+        on_link = sum(
+            1 for d in self.drones if d.position is conn)
+        key = "-".join(sorted([conn.hub1.name, conn.hub2.name]))
+        if on_link + link_usage.get(key, 0) + 1 <= conn.max_link_capacity:
+            return True
+        else:
+            return False
 
     def run(self) -> list[str]:
         trace: list[str] = []
@@ -47,6 +67,8 @@ class Simulation:
                     drone.remaining_turns -= 1
                     if drone.remaining_turns > 0:
                         drone.position = drone.destination
+                        if drone.position == self.end:
+                            drone.is_delivered = True
                         drone.destination = None
                         moves.append(f"D{drone.id}-{drone.position.name}")
                     else:
@@ -59,14 +81,7 @@ class Simulation:
                         c for c in drone.position.connections if next_hub in (c.hub1, c.hub2))
                     key = "-".join(sorted([conn.hub1.name, conn.hub2.name]))
                     if next_hub.zone_type == "restricted":
-                        occupants = sum(
-                            1 for drone in self.drones if drone.position == next_hub)
-                        on_link = sum(
-                            1 for drone in self.drones if drone.position is conn)
-                        reserved = sum(
-                            1 for drone in self.drones if drone.destination == next_hub)
-                        if (on_link + link_usage.get(key, 0) + 1 <= conn.max_link_capacity
-                                and occupants + reserved + 1 <= next_hub.max_drones or next_hub.is_end):
+                        if self._can_enter_zone(next_hub) and self._can_use_link(conn, link_usage):
                             drone.remaining_turns = 2
                             drone.destination = next_hub
                             drone.position = conn
@@ -74,21 +89,15 @@ class Simulation:
                             link_usage[key] = link_usage.get(key, 0) + 1
                             moves.append(
                                 f"D{drone.id}-{conn.hub1.name}-{conn.hub2.name}")
-                        else:
-                            continue
                     else:
-                        occupants = sum(
-                            1 for drone in self.drones if drone.position == next_hub)
-                        on_link = sum(
-                            1 for drone in self.drones if drone.position is conn)
-                        if on_link + link_usage.get(key, 0) + 1 <= conn.max_link_capacity and (occupants + 1 <= next_hub.max_drones or next_hub.is_end):
+                        if self._can_enter_zone(next_hub) and self._can_use_link(conn, link_usage):
                             drone.position = next_hub
                             drone.plan_index += 1
                             link_usage[key] = link_usage.get(key, 0) + 1
                             if drone.position == self.end:
                                 drone.is_delivered = True
                             moves.append(f"D{drone.id}-{drone.position.name}")
-                else:
-                    continue
+            if not moves:
+                raise SimulationError(None, "Drone could not move")
             trace.append(" ".join(moves))
         return trace

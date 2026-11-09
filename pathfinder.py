@@ -12,60 +12,78 @@
 # ########################################################################### #
 
 from models import Hub
+from exceptions import SimulationError
 
 
-def find_path(start: Hub, end: Hub, hubs: dict[str, Hub], load: dict[str, float]) -> list[Hub]:
+class Pathfinder:
+    def __init__(self, hubs: dict[str, Hub], start: Hub, end: Hub) -> None:
+        self.hubs = hubs
+        self.start = start
+        self.end = end
 
-    costs = {hub.name: float('inf') for hub in hubs.values()}
-    costs[start.name] = 0
+    def _move_cost(self, hub: Hub) -> float:
+        if hub.zone_type == "restricted":
+            return 2
+        elif hub.zone_type == "priority":
+            return 0.5
+        else:
+            return 1
 
-    came_from = {hub.name: None for hub in hubs.values()}
-
-    frontier = [start.name]
-
-    settled = set()
-
-    while frontier:
-        current = min(frontier, key=lambda name: costs[name])
-        frontier.remove(current)
-        settled.add(current)
-
-        if current == end.name:
-            break
-
-        for connection in hubs[current].connections:
-            if hubs[current] is connection.hub1:
-                neighbor = connection.hub2
+    def _neighbors(self, hub: Hub) -> list[Hub]:
+        neighbors = []
+        for connection in hub.connections:
+            if hub is connection.hub1:
+                neighbors.append(connection.hub2)
             else:
-                neighbor = connection.hub1
+                neighbors.append(connection.hub1)
+        return neighbors
 
-            if neighbor.name in settled:
-                continue
+    def find_path(self, load: dict[str, float]) -> list[Hub]:
 
-            if neighbor.zone_type == "blocked":
-                continue
+        costs = {hub.name: float('inf') for hub in self.hubs.values()}
+        costs[self.start.name] = 0
 
-            if neighbor.zone_type == "restricted":
-                move_cost = 2
-            elif neighbor.zone_type == "priority":
-                move_cost = 0.5
-            else:
-                move_cost = 1
+        came_from = {hub.name: None for hub in self.hubs.values()}
 
-            new_cost = costs[current] + move_cost + \
-                load.get(neighbor.name, 0.0)
+        frontier = [self.start.name]
 
-            if new_cost < costs[neighbor.name]:
-                costs[neighbor.name] = new_cost
-                came_from[neighbor.name] = current
-                frontier.append(neighbor.name)
+        settled = set()
 
-    current = end.name
-    path = []
+        while frontier:
+            current = min(frontier, key=lambda name: costs[name])
+            frontier.remove(current)
+            settled.add(current)
 
-    while current:
-        path.append(hubs[current])
-        current = came_from[current]
+            if current == self.end.name:
+                break
 
-    path.reverse()
-    return path
+            for neighbor in self._neighbors(self.hubs[current]):
+
+                if neighbor.name in settled:
+                    continue
+
+                if neighbor.zone_type == "blocked":
+                    continue
+
+                move_cost = self._move_cost(neighbor)
+
+                new_cost = costs[current] + move_cost + \
+                    load.get(neighbor.name, 0.0)
+
+                if new_cost < costs[neighbor.name]:
+                    costs[neighbor.name] = new_cost
+                    came_from[neighbor.name] = current
+                    frontier.append(neighbor.name)
+
+        if self.end.name not in settled:
+            raise SimulationError(None, "End is unreachable")
+
+        current = self.end.name
+        path = []
+
+        while current:
+            path.append(self.hubs[current])
+            current = came_from[current]
+
+        path.reverse()
+        return path

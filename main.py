@@ -19,6 +19,9 @@ from renderer import run_renderer
 
 
 def main() -> None:
+    if len(argv) != 2:
+        print("Error: Usage: python main.py <map_file>")
+        exit(1)
     try:
         parsed_map = Parser().parse(argv[1])
         sim = Simulation(parsed_map)
@@ -29,17 +32,16 @@ def main() -> None:
         print(f"Error: {e}")
         exit(1)
 
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+        exit(1)
+
     choice = input("1 - Terminal / 2 - Graphical Interface")
     if choice == "2":
         run_renderer(parsed_map, trace)
     else:
-        n = 1
         for line in trace:
-            print(f"Turn {n}:")
-            print()
-            print(line.replace(' ', '\n'))
-            print()
-            n += 1
+            print(line)
 
 
 if __name__ == "__main__":

@@ -46,7 +46,7 @@ class Parser:
             main_part = rest
             metadata_part = None
 
-        components = main_part.strip().split(" ")
+        components = main_part.strip().split()
         name = components[0]
         if len(components) == 3:
             try:
@@ -65,8 +65,11 @@ class Parser:
             if metadata_part:
                 metadata_str = metadata_part.rstrip("]")
 
-                for pair in metadata_str.split(" "):
-                    key, value = pair.split("=")
+                for pair in metadata_str.split():
+                    if "=" not in pair:
+                        raise ParseError(self.current_line_n,
+                                         f"Invalid metadata: '{pair}', expected key=value, example: [max_drones=2]")
+                    key, value = pair.split("=", 1)
                     if key == "zone":
                         if value.lower() not in zones:
                             raise ParseError(
@@ -76,14 +79,22 @@ class Parser:
                     elif key == "color":
                         color = value
                     elif key == "max_drones":
-                        if int(value) <= 0:
-                            raise ParseError(
-                                self.current_line_n,
-                                "Invalid max_drones capacity")
-                        max_drones = int(value)
+                        try:
+                            if int(value) <= 0:
+                                raise ParseError(
+                                    self.current_line_n,
+                                    "Invalid max_drones capacity")
+                            max_drones = int(value)
+                        except ValueError:
+                            raise (ParseError(self.current_line_n, "expecting a int for the key value"))
+                    else:
+                        raise ParseError(self.current_line_n, f"'{key}' is not valid!")
         else:
-            raise ParseError(
-                self.current_line_n, f"Missing components for '{name}'")
+            if len(components) < 3:
+                raise ParseError(
+                    self.current_line_n, f"Missing components for '{name}'")
+            else:
+                raise ParseError(self.current_line_n, f"'{name}' has too many fields, expected (name x y [metadata])")
 
         return Hub(
             name=name,
@@ -94,14 +105,25 @@ class Parser:
             color=color
         )
 
+    def _store_hub(self, hub: Hub) -> None:
+        if hub.name in self.hubs:
+            raise ParseError(self.current_line_n, f"Duplicate hub name '{hub.name}'")
+        self.hubs[hub.name] = hub
+
     def _parse_connection(self, rest: str) -> Connection:
         if "[" in rest:
             main_part, metadata_part = rest.split("[", 1)
         else:
             main_part = rest
             metadata_part = None
-
+        if "-" not in main_part:
+            raise ParseError(self.current_line_n, f"Invalid connection: '{main_part}', example: 'hub1-hub2")
         components = main_part.strip().split("-")
+        if len(components) != 2:
+            raise ParseError(self.current_line_n,
+                             f"Invalid connection: '{main_part}', Connection must follow this format 'hub1-hub2")
+        if components[0] == components[1]:
+            raise ParseError(self.current_line_n, f"Invalid connection: '{main_part}', Connection links its own hub")
         if components[0] in self.hubs and components[1] in self.hubs:
             hub1 = self.hubs[components[0]]
             hub2 = self.hubs[components[1]]
@@ -133,9 +155,16 @@ class Parser:
 
         if metadata_part:
             metadata_str = metadata_part.rstrip("]")
-            name, value = metadata_str.split("=")
+            if "=" not in metadata_str:
+                raise ParseError(self.current_line_n,
+                                 f"Invalid metadata: '{metadata_str}', expected key=value, example: [max_link_capacity=1]")
+            name, value = metadata_str.split("=", 1)
             if name == "max_link_capacity":
                 try:
+                    if int(value) <= 0:
+                        raise ParseError(
+                            self.current_line_n,
+                            "Invalid max_link_capacity")
                     max_link_capacity = int(value)
                 except ValueError:
                     raise ParseError(self.current_line_n,
@@ -177,17 +206,21 @@ class Parser:
                                      f"'{rest}' is not a Integer!")
             elif prefix == "start_hub":
                 hub = self._parse_hub(rest)
+                if self.start_hub is not None:
+                    raise ParseError(self.current_line_n, "Multiple start hubs")
+                self._store_hub(hub)
                 self.start_hub = hub
-                self.hubs[hub.name] = hub
                 hub.is_start = True
             elif prefix == "end_hub":
                 hub = self._parse_hub(rest)
+                if self.end_hub is not None:
+                    raise ParseError(self.current_line_n, "Multiple end hubs")
+                self._store_hub(hub)
                 self.end_hub = hub
-                self.hubs[hub.name] = hub
                 hub.is_end = True
             elif prefix == "hub":
                 hub = self._parse_hub(rest)
-                self.hubs[hub.name] = hub
+                self._store_hub(hub)
             elif prefix == "connection":
                 connection = self._parse_connection(rest)
                 self.connections.append(connection)

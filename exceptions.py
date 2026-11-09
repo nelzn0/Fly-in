@@ -12,10 +12,14 @@
 # ########################################################################### #
 
 class FlyInError(Exception):
-    def __init__(self, line_n: int, message: str) -> None:
+    def __init__(self, line_n: int | None, message: str) -> None:
         self.line_n = line_n
         self.message = message
-        super().__init__(f"Line {line_n}: {message}")
+        if line_n is None:
+            text = message
+        else:
+            text = f"Line {line_n}: {message}"
+        super().__init__(text)
 
 
 class ParseError(FlyInError):
