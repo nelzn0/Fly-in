@@ -68,8 +68,11 @@ class Renderer:
         self._set_margins()
 
     def _index_connections(self) -> dict[str, Connection]:
-        connections = {self.connection_key(connection.hub1.name, connection.hub2.name)
-                                           : connection for connection in self.parsed.connections}
+        connections = {
+            self.connection_key(connection.hub1.name, connection.hub2.name):
+                connection
+            for connection in self.parsed.connections
+        }
         return connections
 
     def _set_bounds(self) -> None:
@@ -84,29 +87,37 @@ class Renderer:
 
     def _set_cell_size(self) -> None:
         self.world_height = self.screen.get_height() - self.HUD_HEIGHT
-        cell_w = SCENE_FIT * self.screen.get_width() // max(self.scene_width, 1)
+        cell_w = (SCENE_FIT * self.screen.get_width()
+                  // max(self.scene_width, 1))
         cell_h = SCENE_FIT * self.world_height // max(self.scene_height, 1)
         self.CELL_SIZE = int(min(cell_w, cell_h))
 
     def _load_fonts(self) -> None:
         font_size = int(max(self.CELL_SIZE // FONT_FRACTION, FONT_FLOOR))
         self.font = pygame.font.SysFont("consolas", font_size)
-        self.line_height = self.font.size("Ag")[1]  # max height = A, min height = g, [1] for only the height
+        # max height = A, min height = g, [1] for only the height
+        self.line_height = self.font.size("Ag")[1]
         self.gap = self.line_height // 2  # line gap
         self.lod = ("full" if self.CELL_SIZE >= LOD_MINIMAL else "minimal")
         self.hud_font = pygame.font.SysFont("consolas", 24)
 
     def _set_radius(self) -> None:
         self.hub_radius = int(max(self.CELL_SIZE // HUB_FRACTION, HUB_FLOOR))
-        self.drone_radius = int(max(self.CELL_SIZE // DRONE_FRACTION, DRONE_FLOOR))
+        self.drone_radius = int(
+            max(self.CELL_SIZE // DRONE_FRACTION, DRONE_FLOOR))
         self.connection_radius = int(self.CELL_SIZE // CONNECTION_FRACTION)
 
     def _set_margins(self) -> None:
         caption_lines = 3 if self.lod == "full" else 0
-        caption_height = self.hub_radius + self.gap + caption_lines * self.line_height
-        self.margin_x = (self.screen.get_width() - (self.scene_width * self.CELL_SIZE)) // 2
-        self.margin_y = self.HUD_HEIGHT + (self.world_height - (self.scene_height *
-                                           self.CELL_SIZE) - caption_height) // 2
+        caption_height = (self.hub_radius + self.gap
+                          + caption_lines * self.line_height)
+        self.margin_x = (
+            self.screen.get_width() - (self.scene_width * self.CELL_SIZE)
+        ) // 2
+        self.margin_y = self.HUD_HEIGHT + (
+            self.world_height - (self.scene_height * self.CELL_SIZE)
+            - caption_height
+        ) // 2
 
     def hub_to_pixel(self, hub: Hub) -> tuple[int, int]:
         """
@@ -142,16 +153,19 @@ class Renderer:
 
     def draw_hud(self, turn_index: int) -> None:
 
-        pygame.draw.rect(self.screen, COLORS["HUD_BG"], (0, 0, self.screen.get_width(), self.HUD_HEIGHT))
+        pygame.draw.rect(
+            self.screen, COLORS["HUD_BG"],
+            (0, 0, self.screen.get_width(), self.HUD_HEIGHT))
 
-        text_surface = self.hud_font.render(f"Turn {turn_index}", True, "white")
+        text_surface = self.hud_font.render(
+            f"Turn {turn_index}", True, "white")
 
         text_y = (self.HUD_HEIGHT - text_surface.get_height()) // 2
 
         self.screen.blit(text_surface, (20, text_y))
 
     def build_occupants(self, turn_index: int) -> dict[str, list[str]]:
-        occupants = {}
+        occupants: dict[str, list[str]] = {}
         for move in self.trace[turn_index].split():
             drone_id, location = move.split("-", 1)
             if location in self.parsed.hubs:
@@ -168,17 +182,20 @@ class Renderer:
         for hub in self.parsed.hubs.values():
             px, py = self.hub_to_pixel(hub)
 
-            pygame.draw.circle(self.screen, hub.color or "white", (px, py), self.hub_radius)
+            pygame.draw.circle(
+                self.screen, hub.color or "white", (px, py), self.hub_radius)
 
             if self.lod == "full":
 
-                name_surface = self.font.render(hub.name, True, COLORS["TEXT_BRIGHT"])
+                name_surface = self.font.render(
+                    hub.name, True, COLORS["TEXT_BRIGHT"])
 
                 name_x = px - name_surface.get_width() // 2
                 name_y = py + self.hub_radius + self.gap
 
                 self.screen.blit(name_surface, (name_x, name_y))
-                type_surface = self.font.render(hub.zone_type, True, COLORS["TEXT_DIM"])
+                type_surface = self.font.render(
+                    hub.zone_type, True, COLORS["TEXT_DIM"])
 
                 type_x = px - type_surface.get_width() // 2
                 type_y = name_y + self.line_height
@@ -188,10 +205,12 @@ class Renderer:
                 drones = occupants.get(hub.name, [])
                 if drones:
                     if not (hub.is_end or hub.is_start):
-                        occ_text = f"{' '.join(drones)} ({len(drones)}/{hub.max_drones})"
+                        occ_text = (f"{' '.join(drones)} "
+                                    f"({len(drones)}/{hub.max_drones})")
                     else:
                         occ_text = ' '.join(drones)
-                    occ_surface = self.font.render(occ_text, True, COLORS["TEXT_ACTIVE"])
+                    occ_surface = self.font.render(
+                        occ_text, True, COLORS["TEXT_ACTIVE"])
                     occ_x = px - occ_surface.get_width() // 2
                     occ_y = type_y + self.line_height
                     self.screen.blit(occ_surface, (occ_x, occ_y))
@@ -201,14 +220,20 @@ class Renderer:
         for connection in self.parsed.connections:
             ax, ay = self.hub_to_pixel(connection.hub1)
             bx, by = self.hub_to_pixel(connection.hub2)
-            pygame.draw.line(self.screen, COLORS["LINES"], (ax, ay), (bx, by), self.connection_radius)
+            pygame.draw.line(
+                self.screen, COLORS["LINES"], (ax, ay), (bx, by),
+                self.connection_radius)
 
             if self.lod == "full":
 
-                drones_c = occupants.get(self.connection_key(connection.hub1.name, connection.hub2.name), [])
+                link_key = self.connection_key(
+                    connection.hub1.name, connection.hub2.name)
+                drones_c = occupants.get(link_key, [])
                 if drones_c:
                     if connection.max_link_capacity > 1:
-                        occ_c_text = f"{' '.join(drones_c)} ({len(drones_c)}/{connection.max_link_capacity})"
+                        occ_c_text = (
+                            f"{' '.join(drones_c)} ({len(drones_c)}/"
+                            f"{connection.max_link_capacity})")
                     else:
                         occ_c_text = " ".join(drones_c)
                     occ_c_surface = self.font.render(occ_c_text, True, "white")
@@ -218,7 +243,7 @@ class Renderer:
 
                     self.screen.blit(occ_c_surface, (occ_c_x, occ_c_y))
 
-    def draw_drones(self, occupants: dict[str, list[str]]):
+    def draw_drones(self, occupants: dict[str, list[str]]) -> None:
         for key, drones in occupants.items():
             if key in self.parsed.hubs:
                 px, py = self.hub_to_pixel(self.parsed.hubs[key])
@@ -226,7 +251,8 @@ class Renderer:
                 px, py = self.connection_to_pixel(self.connections[key])
             for drone_id in drones:
                 color = self.palette[int(drone_id[1:]) % len(self.palette)]
-                pygame.draw.circle(self.screen, color, (px, py), self.drone_radius)
+                pygame.draw.circle(
+                    self.screen, color, (px, py), self.drone_radius)
 
     def draw_frame(self, turn_index: int) -> None:
         """
@@ -250,7 +276,8 @@ class Renderer:
 
     def run(self) -> None:
         """
-        Constructs the renderer, and loops the frame drawing, paces the clock and advances the turns
+        Constructs the renderer, and loops the frame drawing, paces the
+        clock and advances the turns
 
         """
         running = True

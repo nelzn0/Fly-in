@@ -11,10 +11,26 @@
 #                                                                             #
 # ########################################################################### #
 
+"""The errors used across the project."""
+
+
 class FlyInError(Exception):
+    """The base error of the project.
+
+    It adds the line number to the message when there is one.
+    """
+
     def __init__(self, line_n: int | None, message: str) -> None:
+        """Builds the error text.
+
+        Args:
+            line_n: The line of the map file where the error is, or None
+                if the error is not about one line.
+            message: What went wrong.
+        """
         self.line_n = line_n
         self.message = message
+        # only add "Line N:" when we know the line
         if line_n is None:
             text = message
         else:
@@ -23,8 +39,8 @@ class FlyInError(Exception):
 
 
 class ParseError(FlyInError):
-    pass
+    """Raised when the map file has a wrong line, field or value."""
 
 
 class SimulationError(FlyInError):
-    pass
+    """Raised when the simulation can't go on, like an unreachable end."""
