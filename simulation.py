@@ -1,15 +1,3 @@
-#!/usr/bin/env python3
-# ########################################################################### #
-#   shebang: 1                                                                #
-#                                                          :::      ::::::::  #
-#   simulation.py                                        :+:      :+:    :+:  #
-#                                                      +:+ +:+         +:+    #
-#   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
-#                                                  +#+#+#+#+#+   +#+          #
-#   Created: 2026/09/10 14:56:44 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/23 19:43:49 by nda-roch           ###   ########.fr      #
-#                                                                             #
-# ########################################################################### #
 
 """Moves the drones turn by turn from the start to the end zone."""
 

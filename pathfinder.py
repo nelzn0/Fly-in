@@ -1,15 +1,3 @@
-#!/usr/bin/env python3
-# ########################################################################### #
-#   shebang: 1                                                                #
-#                                                          :::      ::::::::  #
-#   pathfinder.py                                        :+:      :+:    :+:  #
-#                                                      +:+ +:+         +:+    #
-#   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
-#                                                  +#+#+#+#+#+   +#+          #
-#   Created: 2026/09/08 17:14:26 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/23 19:28:18 by nda-roch           ###   ########.fr      #
-#                                                                             #
-# ########################################################################### #
 
 """Finds the cheapest path for a drone from the start to the end zone."""
 

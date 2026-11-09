@@ -1,15 +1,4 @@
-#!/usr/bin/env python3
-# ########################################################################### #
-#   shebang: 1                                                                #
-#                                                          :::      ::::::::  #
-#   main.py                                              :+:      :+:    :+:  #
-#                                                      +:+ +:+         +:+    #
-#   By: nda-roch <nda-roch@student.42porto.com>      +#+  +:+       +#+       #
-#                                                  +#+#+#+#+#+   +#+          #
-#   Created: 2026/08/27 14:38:52 by nda-roch            #+#    #+#            #
-#   Updated: 2026/09/23 19:32:57 by nda-roch           ###   ########.fr      #
-#                                                                             #
-# ########################################################################### #
+
 
 """Entry point of Fly-in. Run it with a map file to start the simulation."""
 
