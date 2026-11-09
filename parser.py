@@ -1,5 +1,3 @@
-
-
 """Reads a map file and checks that it follows the rules."""
 
 from dataclasses import dataclass

@@ -1,4 +1,3 @@
-
 """The errors used across the project."""
 
 

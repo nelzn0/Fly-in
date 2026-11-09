@@ -1,4 +1,3 @@
-
 """The zones (hubs) of the map and the connections between them."""
 
 from __future__ import annotations

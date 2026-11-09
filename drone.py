@@ -1,4 +1,3 @@
-
 """A drone and where it is on its route."""
 
 from dataclasses import dataclass, field

@@ -1,5 +1,3 @@
-
-
 """Entry point of Fly-in. Run it with a map file to start the simulation."""
 
 from parser import Parser
@@ -29,12 +27,20 @@ def main() -> None:
         trace = sim.run()
 
     # a bad map, a missing file or a stuck simulation all stop here
-    except (FlyInError, FileNotFoundError) as e:
+    except (FlyInError, OSError) as e:
         print(f"Error: {e}")
         exit(1)
 
+    except KeyboardInterrupt:
+        print("Interrupted")
+        exit(1)
+
     # the trace is already done, so the user only picks how to see it
-    choice = input("1 - Terminal / 2 - Graphical Interface\n")
+    try:
+        choice = input("1 - Terminal / 2 - Graphical Interface\n")
+    except (EOFError, KeyboardInterrupt):
+        print("\nNo option chosen, exiting.")
+        exit(1)
 
     if choice == "2":
         # importing renderer also imports pygame, so it only happens here

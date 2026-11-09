@@ -1,4 +1,3 @@
-
 """Moves the drones turn by turn from the start to the end zone."""
 
 from parser import ParsedMap

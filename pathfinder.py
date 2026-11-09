@@ -1,4 +1,3 @@
-
 """Finds the cheapest path for a drone from the start to the end zone."""
 
 from models import Hub
