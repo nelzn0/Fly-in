@@ -143,14 +143,21 @@ If no drone can move in a turn, the simulation stops with an error, because it w
 
 **Terminal:** one line per turn, with every move of that turn. This is the format from the subject, and it is easy to copy or compare between runs.
 
-**Graphical view (pygame):**
-- Zones are circles, in the color from the map (white if there is none). Each zone shows its name, its zone type, and the drones inside it.
-- Connections are green lines. A connection that has drones on it shows them too.
-- Drones are small colored circles. The color depends on the drone number.
-- The top bar shows the current turn.
-- The turns advance on their own, one turn every 0.7 seconds.
+**Graphical view (pygame):** choose `2` when the program asks. The window has three parts:
+- **Top bar:** the current turn, plus on the right: how many drones are delivered, how many are in flight, and how many moved this turn. "In flight" means a drone is flying toward a restricted zone.
+- **Map:** zones are circles in the color from the map (white if there is none). Each zone shows its name, its zone type, and the drones inside it. Connections are green lines, and drones on a connection are shown on it.
+- **Bottom bar:** the current mode and the keys you can use.
 
-[TODO: update this part once the playback choice (automatic or space bar) is decided]
+Drones are small colored circles. The color depends on the drone number, and the colors repeat after 7 drones. Drones that share a zone are spread on a small ring, so you can see each one.
+
+**Playback:** the view starts in auto mode, where one turn is shown every 0.7 seconds. Press TAB to switch to manual mode, where SPACE shows the next turn. This lets you read each turn at your own pace.
+
+| Key | Action |
+|-----|--------|
+| TAB | switch between auto and manual |
+| SPACE | next turn (manual mode only) |
+| R | back to the start |
+| ESC | quit |
 
 ## Performance
 
