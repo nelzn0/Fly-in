@@ -13,6 +13,9 @@ DRONE_FLOOR = 4
 CONNECTION_FRACTION = 50
 LOD_MINIMAL = 100
 BEAT_MS = 700
+FOOTER_HEIGHT = 40
+HUD_HEIGHT = 80
+
 
 COLORS = {
     "BACKGROUND": "#0a0a12",
@@ -30,8 +33,6 @@ class Renderer:
     Renderer class
     """
 
-    HUD_HEIGHT = 80
-
     def __init__(self, parsed: ParsedMap, trace: list[str]) -> None:
         """Renderer Parameters
 
@@ -45,7 +46,10 @@ class Renderer:
         self.parsed = parsed
         self.trace = trace
         self.connections = self._index_connections()
-        self.screen = pygame.display.set_mode((1920, 1080))
+        info = pygame.display.Info()
+        width = min(1280, int(info.current_w * 0.8))
+        height = min(720, int(info.current_w * 0.8))
+        self.screen = pygame.display.set_mode((width, height))
         self.clock = pygame.time.Clock()
         self.palette = ["green", "blue", "yellow", "orange"]
 
@@ -74,7 +78,8 @@ class Renderer:
         self.scene_height = self.max_y - self.min_y
 
     def _set_cell_size(self) -> None:
-        self.world_height = self.screen.get_height() - self.HUD_HEIGHT
+        self.world_height = (self.screen.get_height()
+                             - HUD_HEIGHT - FOOTER_HEIGHT)
         cell_w = (SCENE_FIT * self.screen.get_width()
                   // max(self.scene_width, 1))
         cell_h = SCENE_FIT * self.world_height // max(self.scene_height, 1)
@@ -102,7 +107,7 @@ class Renderer:
         self.margin_x = (
             self.screen.get_width() - (self.scene_width * self.CELL_SIZE)
         ) // 2
-        self.margin_y = self.HUD_HEIGHT + (
+        self.margin_y = HUD_HEIGHT + (
             self.world_height - (self.scene_height * self.CELL_SIZE)
             - caption_height
         ) // 2
@@ -143,18 +148,39 @@ class Renderer:
 
         pygame.draw.rect(
             self.screen, COLORS["HUD_BG"],
-            (0, 0, self.screen.get_width(), self.HUD_HEIGHT))
+            (0, 0, self.screen.get_width(), HUD_HEIGHT))
 
         text_surface = self.hud_font.render(
             f"Turn {turn_index}", True, "white")
 
-        text_y = (self.HUD_HEIGHT - text_surface.get_height()) // 2
+        text_y = (HUD_HEIGHT - text_surface.get_height()) // 2
 
         self.screen.blit(text_surface, (20, text_y))
 
+    def draw_footer(self, auto: bool) -> None:
+
+        top = self.screen.get_height() - FOOTER_HEIGHT
+
+        pygame.draw.rect(
+            self.screen, COLORS["HUD_BG"],
+            (0, top, self.screen.get_width(), FOOTER_HEIGHT))
+
+        mode = "AUTO" if auto else "MANUAL"
+        controls = "TAB: switch mode  R: reset  ESC: quit"
+        if not auto:
+            controls = "SPACE: next turn  " + controls
+        text_surface = self.hud_font.render(
+            f"{mode} | {controls}", True, COLORS["HUD_TEXT"])
+
+        text_y = top + (FOOTER_HEIGHT - text_surface.get_height()) // 2
+        self.screen.blit(text_surface, (20, text_y))
+
     def build_occupants(self, turn_index: int) -> dict[str, list[str]]:
+        if turn_index == 0:
+            drones = [f"D{i}" for i in range(1, self.parsed.n_drones + 1)]
+            return {self.parsed.start.name: drones}
         occupants: dict[str, list[str]] = {}
-        for move in self.trace[turn_index].split():
+        for move in self.trace[turn_index - 1].split():
             drone_id, location = move.split("-", 1)
             if location in self.parsed.hubs:
                 key = location
@@ -242,7 +268,7 @@ class Renderer:
                 pygame.draw.circle(
                     self.screen, color, (px, py), self.drone_radius)
 
-    def draw_frame(self, turn_index: int) -> None:
+    def draw_frame(self, turn_index: int, auto: bool = True) -> None:
         """
             draw the hubs, the connections, and the drones
 
@@ -251,6 +277,8 @@ class Renderer:
         self.screen.fill(COLORS["BACKGROUND"])
 
         self.draw_hud(turn_index)
+
+        self.draw_footer(auto)
 
         occupants = self.build_occupants(turn_index)
 
@@ -269,7 +297,8 @@ class Renderer:
 
         """
         running = True
-
+        auto = True
+        last_turn = len(self.trace)
         last_advance = pygame.time.get_ticks()
         turn_index = 0
 
@@ -278,17 +307,28 @@ class Renderer:
                 if event.type == pygame.QUIT:
                     running = False
 
-                # if event.type == pygame.KEYDOWN:
-                #     if event.key == pygame.K_SPACE:
-                #         turn_index += 1
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_TAB:
+                        auto = not auto
+                        last_advance = pygame.time.get_ticks()
 
-            self.draw_frame(turn_index)
-            self.clock.tick(30)
+                    elif event.key == pygame.K_SPACE and not auto:
+                        turn_index = min(turn_index + 1, last_turn)
 
-            if turn_index < len(self.trace) - 1:
+                    elif event.key == pygame.K_r:
+                        turn_index = 0
+                        last_advance = pygame.time.get_ticks()
+
+                    elif event.key == pygame.K_ESCAPE:
+                        running = False
+
+            if auto and turn_index < last_turn:
                 time_now = pygame.time.get_ticks()
                 if time_now - last_advance >= BEAT_MS:
                     turn_index += 1
                     last_advance = time_now
+
+            self.draw_frame(turn_index, auto)
+            self.clock.tick(30)
 
         pygame.quit()
